@@ -9,7 +9,7 @@ while len(buffer) <= 30:
   counter=counter+200
   
   
-for string in buffer;
+for string in buffer:
   print "Fuzzing PASS with %s bytes" % len(string)        # Fuzzer for the SLmail password field
   s=socket.socket(socket.AF_INET, socket.SOCK_STREAM)
   connect=s.connect(('10.0.0.22', 110))
