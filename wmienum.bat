@@ -11,4 +11,3 @@ wmic startup get Caption,Command,Location,User /format:"%var%" >> out.html
 wmic PRODUCT get Description,InstallDate,InstallLocation,PackageCache,Vendor,Version /format:"%var%" >> out.html
 wmic os get name,version,InstallDate,LastBootUpTime,LocalDateTime,Manufacturer,RegisteredUser,ServicePackMajorVersion,Sys temDirectory /format:"%var%" >> out.html
 wmic Timezone get DaylightName,Description,StandardName /format:"%var%" >> out.html
-
