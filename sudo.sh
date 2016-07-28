@@ -28,6 +28,7 @@
 # [foobar:~]$ sudo id [the system remembers previous authentification]
 # uid=0(root) gid=0(root) groups=0(root),1(bin),2(daemon),3(sys),4(adm),6(disk),10(wheel),19(log)
 
+
 #!/bin/bash
 /usr/bin/sudo -n true 2>/dev/null
 if [ $? -eq 0 ]
