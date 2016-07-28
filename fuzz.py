@@ -14,7 +14,7 @@ for string in buffer;
   s=socket.socket(socket.AF_INET, socket.SOCK_STREAM)
   connect=s.connect(('10.0.0.22', 110))
   s.recv(1024)
-  s.send('USER' test\r\n')
+  s.send('USER test\r\n')
   s.recv(1024)
   s.send('PASS ' + string + '\r\n')
   s.send('QUIT\r\n')
