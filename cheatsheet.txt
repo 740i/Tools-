@@ -242,9 +242,6 @@ mount 192.168.1.1:/vol/share /mnt/nfs
 # mount a windows share
 smbmount //X.X.X.X/c$ /mnt/remote/ -o username=user,password=pass,rw
 
-# smb user enum
-python /usr/share/doc/python-impacket-doc/examples/samrdump.py 192.168.XXX.XXX
-
 
 # connect to a samba share 
 $ smbmount //server/share /mnt/win -o user=username,password=password1
@@ -374,7 +371,7 @@ int main(void){
 
 
 
-# SQLMap examples, check highoncoffee blog for more
+# SQLMap examples
 
 # automated scan
 
