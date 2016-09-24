@@ -1,12 +1,12 @@
 #!/bin/bash
-# wpscan --url 10.1.1.137 --wordlist ~/pass.txt --username admin
+# wpscan --url 192.168.1.56 --wordlist ~/pass.txt --username admin
 
 function usage(){
   echo "### wordpress username enumerator v0.1"
   echo "### by using wordpress' lostpassword function."
   echo ""
   echo "USAGE: $0 <base-url> <wordlist>"
-  echo "USAGE: $0 10.1.1.137 users.txt"
+  echo "USAGE: $0 192.168.1.56 users.txt"
 }
 
 function main(){
