@@ -15,7 +15,7 @@ int main(void) {
 
     sockfd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
     serv_addr.sin_family = AF_INET;
-    serv_addr.sin_addr.s_addr = inet_addr("192.168.57.102");
+    serv_addr.sin_addr.s_addr = inet_addr("192.168.1.151");
     serv_addr.sin_port = htons(lportno);
     connect(sockfd, (struct sockaddr *) &serv_addr, 16);
 
