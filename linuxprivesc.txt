@@ -379,7 +379,7 @@ http://www.vulnview.com/cve-details.php?cvename=[CVE]
 (Quick) "Common" exploits. Warning. Pre-compiled binaries files. Use at your own risk
 http://tarantula.by.ru/localroot/
 http://www.kecepatan.66ghz.com/file/local-root-exploit-priv9/
-
+github.com/fuzzysec/
 
 
 
